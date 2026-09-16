@@ -1,0 +1,23 @@
+{
+  "collections": {
+    "users": {
+      "fields": {
+        "name": "string",
+        "balance": "number",
+        "referrals": "number",
+        "referralBonus": "number",
+        "lastDailyBonusDate": "string",
+        "joinedAt": "timestamp"
+      }
+    },
+    "withdrawals": {
+      "fields": {
+        "userId": "string",
+        "amount": "number",
+        "method": "string",
+        "status": "string",
+        "createdAt": "timestamp"
+      }
+    }
+  }
+}
