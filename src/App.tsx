@@ -207,14 +207,5 @@ export default function App() {
           <Play fill='white'/>
           <span className='font-bold'>ভিডিও দেখুন ১০০ টাকা</span>
       </button>
-
-      {/* Bottom Nav */}
-      <div className='fixed bottom-0 w-full bg-zinc-900 flex justify-around p-3 border-t border-zinc-800 text-zinc-400'>
-          <div onClick={() => setActiveTab('home')} className={`flex flex-col items-center cursor-pointer ${activeTab === 'home' ? 'text-amber-400' : ''}`}><Home size={20}/> <span className='text-xs'>হোম</span></div>
-          <div onClick={() => setActiveTab('task')} className={`flex flex-col items-center cursor-pointer ${activeTab === 'task' ? 'text-teal-400' : ''}`}><ListTodo size={20}/> <span className='text-xs'>টাস্ক</span></div>
-          <div onClick={() => setActiveTab('referral')} className={`flex flex-col items-center cursor-pointer ${activeTab === 'referral' ? 'text-purple-400' : ''}`}><Users size={20}/> <span className='text-xs'>রেফারেল</span></div>
-          <div onClick={() => setActiveTab('withdrawal')} className={`flex flex-col items-center cursor-pointer ${activeTab === 'withdrawal' ? 'text-amber-400' : ''}`}><Wallet size={20}/> <span className='text-xs'>উত্তোলন</span></div>
-          <div onClick={() => setActiveTab('profile')} className={`flex flex-col items-center cursor-pointer ${activeTab === 'profile' ? 'text-amber-400' : ''}`}><UserCircle size={20}/> <span className='text-xs'>প্রোফাইল</span></div>
-      </div>
   </div>;
 }

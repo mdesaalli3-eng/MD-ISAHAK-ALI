@@ -21,6 +21,13 @@ export const LoginPage = () => {
                     alert("দয়া করে আপনার নাম লিখুন");
                     return;
                 }
+                
+                // ডিভাইস রেস্ট্রিকশন চেক
+                if (localStorage.getItem('accountCreatedOnDevice')) {
+                    alert("এই ডিভাইসে ইতিমধ্যে একটি অ্যাকাউন্ট তৈরি করা হয়েছে।");
+                    return;
+                }
+
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 await setDoc(doc(db, 'users', userCredential.user.uid), {
                     id: userCredential.user.uid,
@@ -34,6 +41,9 @@ export const LoginPage = () => {
                     lastDailyBonusDate: null,
                     joinedAt: serverTimestamp()
                 });
+                
+                // রেস্ট্রিকশন ফ্ল্যাগ সেট করা
+                localStorage.setItem('accountCreatedOnDevice', 'true');
             }
         } catch (error) {
             alert(error instanceof Error ? error.message : "Auth error");
