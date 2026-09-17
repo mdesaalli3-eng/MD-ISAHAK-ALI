@@ -99,6 +99,9 @@ const BonusModal = ({ isOpen, onClose, onConfirm, isAlreadyClaimed }: { isOpen: 
 };
 
 export default function App() {
+  if (window.location.pathname === '/admin') {
+    return <AdminPanel />;
+  }
   const [activeTab, setActiveTab] = useState('home');
   const [showRules, setShowRules] = useState(false);
   const [showBonusModal, setShowBonusModal] = useState(false);
@@ -195,12 +198,11 @@ export default function App() {
         isAlreadyClaimed={user.lastDailyBonusDate === new Date().toDateString()} 
       />
       
-      {activeTab === 'home' && <HomePage setShowRules={setShowRules} user={user} onClaimBonus={() => setShowBonusModal(true)} onTriggerAdmin={() => setActiveTab('admin')} />}
+      {activeTab === 'home' && <HomePage setShowRules={setShowRules} user={user} onClaimBonus={() => setShowBonusModal(true)} />}
       {activeTab === 'task' && <TaskPage />}
       {activeTab === 'referral' && <ReferralPage user={user} onSimulateReferral={addReferral} />}
       {activeTab === 'withdrawal' && <WithdrawalPage user={user} />}
       {activeTab === 'profile' && <ProfilePage user={user} />}
-      {activeTab === 'admin' && <AdminPanel user={user} onClose={() => setActiveTab('home')} />}
 
       {/* Floating Action Button */}
       <button className='fixed bottom-24 right-6 bg-red-500 text-white p-4 rounded-full flex items-center gap-2 shadow-xl'>

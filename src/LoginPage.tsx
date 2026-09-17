@@ -5,45 +5,45 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './lib/firebase';
 
 export const LoginPage = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const [name, setName] = useState('');
-    const [referralCode, setReferralCode] = useState('');
-    const [isLogin, setIsLogin] = useState(true);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            if (isLogin) {
-                await signInWithEmailAndPassword(auth, email, password);
-            } else {
-                if (!name.trim()) {
-                    alert("দয়া করে আপনার নাম লিখুন");
-                    return;
-                }
-                
-                // ডিভাইস রেস্ট্রিকশন চেক
-                if (localStorage.getItem('accountCreatedOnDevice')) {
-                    alert("এই ডিভাইসে ইতিমধ্যে একটি অ্যাকাউন্ট তৈরি করা হয়েছে।");
-                    return;
-                }
+        const userName = name.trim();
+        if (!userName) {
+            alert("দয়া করে আপনার নাম লিখুন");
+            return;
+        }
+        
+        // Get referral code from URL parameter '?ref=...'
+        const urlParams = new URLSearchParams(window.location.search);
+        const referralCode = urlParams.get('ref') || '';
 
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                await setDoc(doc(db, 'users', userCredential.user.uid), {
-                    id: userCredential.user.uid,
-                    name: name.trim(),
-                    email,
-                    referralCode: referralCode.trim(),
-                    role: 'user',
-                    balance: 50,
-                    referrals: 0,
-                    referralBonus: 0,
-                    lastDailyBonusDate: null,
-                    joinedAt: serverTimestamp()
-                });
-                
-                // রেস্ট্রিকশন ফ্ল্যাগ সেট করা
-                localStorage.setItem('accountCreatedOnDevice', 'true');
+        const email = userName.toLowerCase().replace(/\s+/g, '') + "@app.local";
+        const password = "password123";
+
+        try {
+            // Try to login, if fails, register
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (loginError: any) {
+                if (loginError.code === 'auth/user-not-found') {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    await setDoc(doc(db, 'users', userCredential.user.uid), {
+                        id: userCredential.user.uid,
+                        name: userName,
+                        email,
+                        referralCode: referralCode.trim(),
+                        role: 'user',
+                        balance: 50,
+                        referrals: 0,
+                        referralBonus: 0,
+                        lastDailyBonusDate: null,
+                        joinedAt: serverTimestamp()
+                    });
+                } else {
+                    throw loginError;
+                }
             }
         } catch (error) {
             alert(error instanceof Error ? error.message : "Auth error");
@@ -53,21 +53,11 @@ export const LoginPage = () => {
     return (
         <div className='min-h-screen bg-zinc-950 flex items-center justify-center p-6'>
             <form onSubmit={handleSubmit} className='bg-zinc-900 p-8 rounded-2xl w-full max-w-sm border border-zinc-700'>
-                <h2 className='text-2xl font-bold mb-6 text-white text-center'>{isLogin ? 'লগইন' : 'রেজিস্ট্রেশন'}</h2>
-                <input type='email' placeholder='ইমেইল' value={email} onChange={e => setEmail(e.target.value)} className='w-full bg-zinc-800 p-4 rounded-xl text-white mb-4' required />
-                <input type='password' placeholder='পাসওয়ার্ড' value={password} onChange={e => setPassword(e.target.value)} className='w-full bg-zinc-800 p-4 rounded-xl text-white mb-6' required />
-                {!isLogin && (
-                    <>
-                        <input type='text' placeholder='আপনার নাম' value={name} onChange={e => setName(e.target.value)} className='w-full bg-zinc-800 p-4 rounded-xl text-white mb-4' />
-                        <input type='text' placeholder='রেফারেল কোড (ঐচ্ছিক)' value={referralCode} onChange={e => setReferralCode(e.target.value)} className='w-full bg-zinc-800 p-4 rounded-xl text-white mb-6' />
-                    </>
-                )}
-                <button type='submit' className='w-full bg-amber-400 hover:bg-amber-500 active:bg-amber-600 transition-colors text-zinc-950 font-bold py-4 rounded-xl mb-4'>
-                    {isLogin ? 'লগইন' : 'রেজিস্ট্রেশন করুন'}
+                <h2 className='text-2xl font-bold mb-6 text-white text-center'>লগইন / রেজিস্ট্রেশন</h2>
+                <input type='text' placeholder='আপনার নাম' value={name} onChange={e => setName(e.target.value)} className='w-full bg-zinc-800 p-4 rounded-xl text-white mb-6' required />
+                <button type='submit' className='w-full bg-amber-400 hover:bg-amber-500 active:bg-amber-600 transition-colors text-zinc-950 font-bold py-4 rounded-xl'>
+                    প্রবেশ করুন
                 </button>
-                <p className='text-zinc-400 text-center cursor-pointer' onClick={() => setIsLogin(!isLogin)}>
-                    {isLogin ? 'একাউন্ট নেই? রেজিস্ট্রেশন করুন' : 'একাউন্ট আছে? লগইন করুন'}
-                </p>
             </form>
         </div>
     );

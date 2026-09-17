@@ -1,14 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Users as UsersIcon, CreditCard, Check, X } from 'lucide-react';
+import { Users as UsersIcon, CreditCard, Check, X, Lock } from 'lucide-react';
 import { db } from './lib/firebase';
 import { collection, onSnapshot, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 
-export const AdminPanel = ({ onClose }: { user: {name: string, id: string, balance: number}, onClose: () => void }) => {
+export const AdminPanel = () => {
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [activeSection, setActiveSection] = useState<'users' | 'transactions' | 'referrals'>('users');
     const [allUsers, setAllUsers] = useState<any[]>([]);
     const [allWithdrawals, setAllWithdrawals] = useState<any[]>([]);
 
+    const handleLogin = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (email === 'mdesaalli74@gmail.com' && password === 'mdesa1111') {
+            setIsAuthenticated(true);
+        } else {
+            alert('ভুল ইমেইল বা পাসওয়ার্ড!');
+        }
+    };
+
     useEffect(() => {
+        if (!isAuthenticated) return;
         const unsubscribeUsers = onSnapshot(query(collection(db, 'users'), orderBy('joinedAt', 'desc')), (snapshot) => {
             setAllUsers(snapshot.docs.map(doc => ({ id: doc.id, uid: doc.id, ...doc.data() })));
         });
@@ -19,7 +32,7 @@ export const AdminPanel = ({ onClose }: { user: {name: string, id: string, balan
             unsubscribeUsers();
             unsubscribeWithdrawals();
         };
-    }, []);
+    }, [isAuthenticated]);
 
     const updateStatus = async (id: string, status: string) => {
         try {
@@ -29,9 +42,22 @@ export const AdminPanel = ({ onClose }: { user: {name: string, id: string, balan
         }
     };
 
+    if (!isAuthenticated) {
+        return (
+            <div className='min-h-screen bg-zinc-950 flex items-center justify-center p-6'>
+                <form onSubmit={handleLogin} className='bg-zinc-900 p-8 rounded-2xl w-full max-w-sm border border-zinc-700'>
+                    <div className='flex justify-center mb-6'><Lock size={48} className='text-amber-400'/></div>
+                    <h2 className='text-2xl font-bold mb-6 text-white text-center'>অ্যাডমিন লগইন</h2>
+                    <input type='email' placeholder='ইমেইল' value={email} onChange={e => setEmail(e.target.value)} className='w-full bg-zinc-800 p-4 rounded-xl text-white mb-4' required />
+                    <input type='password' placeholder='পাসওয়ার্ড' value={password} onChange={e => setPassword(e.target.value)} className='w-full bg-zinc-800 p-4 rounded-xl text-white mb-6' required />
+                    <button type='submit' className='w-full bg-amber-400 text-zinc-950 font-bold py-4 rounded-xl'>লগইন</button>
+                </form>
+            </div>
+        );
+    }
+
     return (
-        <div className='pb-24 p-4'>
-            <button onClick={onClose} className='bg-zinc-800 text-white px-4 py-2 rounded-xl mb-4'>← ফিরে যান</button>
+        <div className='pb-24 p-4 min-h-screen bg-zinc-950 text-white'>
             <h2 className='text-2xl font-bold mb-6 text-center text-amber-400'>অ্যাডমিন প্যানেল</h2>
             
             <div className='flex gap-2 mb-6'>
@@ -71,7 +97,7 @@ export const AdminPanel = ({ onClose }: { user: {name: string, id: string, balan
                                 <p className='text-sm text-zinc-300'>
                                     <span className='font-bold text-white'>{u.name}</span> (ID: {u.id}) -কে রেফার করেছেন 
                                     <span className='font-bold text-amber-400'> {referrer ? referrer.name : 'অজ্ঞাত'}</span> 
-                                    {referrer && ` (ID: ${referrer.id})`}
+                                    {referrer && ` (ID: {referrer.id})`}
                                 </p>
                             </div>
                         );

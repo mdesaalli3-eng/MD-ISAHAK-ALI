@@ -1,16 +1,11 @@
 import React from 'react';
 import { ScrollText, Coins, Play, Calendar, Users, Wallet, Megaphone, Lightbulb } from 'lucide-react';
 
-export const HomePage = ({ setShowRules, user, onClaimBonus, onTriggerAdmin }: { setShowRules: (show: boolean) => void, user: {name: string, id: string, balance: number}, onClaimBonus: () => void, onTriggerAdmin: () => void }) => {
+export const HomePage = ({ setShowRules, user, onClaimBonus }: { setShowRules: (show: boolean) => void, user: {name: string, id: string, balance: number}, onClaimBonus: () => void }) => {
     const [clickCount, setClickCount] = React.useState(0);
 
     const handleWelcomeClick = () => {
-        const newCount = clickCount + 1;
-        setClickCount(newCount);
-        if (newCount >= 5) {
-            setClickCount(0);
-            onTriggerAdmin();
-        }
+        setClickCount(clickCount + 1);
     };
 
     return (
