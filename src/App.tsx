@@ -102,20 +102,16 @@ export default function App() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [user, setUser] = useState<any | null>(null);
 
-  if (showAdmin) {
-    return <AdminPanel />;
-  }
-  
-  if (window.location.pathname === '/admin') {
-    return <AdminPanel />;
-  }
-  
   useEffect(() => {
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
         setUser(JSON.parse(savedUser));
     }
   }, []);
+
+  if (showAdmin || window.location.pathname === '/admin') {
+    return <AdminPanel />;
+  }
 
   const saveUserToLocalStorage = (updatedUser: any) => {
       setUser(updatedUser);
