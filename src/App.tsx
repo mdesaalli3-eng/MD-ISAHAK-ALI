@@ -6,9 +6,6 @@ import { TaskPage } from './TaskPage';
 import { WithdrawalPage } from './WithdrawalPage';
 import { ProfilePage } from './ProfilePage';
 import { AdminPanel } from './AdminPanel';
-import { auth, db } from './lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
 import { LoginPage } from './LoginPage';
 // ... rest of the file ...
 
@@ -99,94 +96,65 @@ const BonusModal = ({ isOpen, onClose, onConfirm, isAlreadyClaimed }: { isOpen: 
 };
 
 export default function App() {
-  if (window.location.pathname === '/admin') {
-    return <AdminPanel />;
-  }
   const [activeTab, setActiveTab] = useState('home');
   const [showRules, setShowRules] = useState(false);
   const [showBonusModal, setShowBonusModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<{name: string, id: string, balance: number, lastDailyBonusDate: string | null, referrals: number, referralBonus: number, uid?: string} | null>(null);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [user, setUser] = useState<any | null>(null);
 
+  if (showAdmin) {
+    return <AdminPanel />;
+  }
+  
+  if (window.location.pathname === '/admin') {
+    return <AdminPanel />;
+  }
+  
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        const unsubscribeDoc = onSnapshot(doc(db, 'users', firebaseUser.uid), (doc) => {
-          if (doc.exists()) {
-            const data = doc.data();
-            setUser({ 
-              uid: firebaseUser.uid, 
-              name: data.name || '',
-              id: data.id || '',
-              balance: data.balance || 0,
-              lastDailyBonusDate: data.lastDailyBonusDate || null,
-              referrals: data.referrals || 0,
-              referralBonus: data.referralBonus || 0,
-              ...data
-            });
-          }
-          setIsLoading(false);
-        });
-        return () => unsubscribeDoc();
-      } else {
-        setUser(null);
-        setIsLoading(false);
-      }
-    });
-    return () => unsubscribeAuth();
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+        setUser(JSON.parse(savedUser));
+    }
   }, []);
 
-  const updateBalance = async (amount: number) => {
-      if (!user?.uid) return;
-      try {
-        await updateDoc(doc(db, 'users', user.uid), {
-            balance: increment(amount)
-        });
-      } catch (error) {
-        console.error("Update balance error:", error);
-      }
+  const saveUserToLocalStorage = (updatedUser: any) => {
+      setUser(updatedUser);
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      
+      const users = JSON.parse(localStorage.getItem('app_users') || '{}');
+      users[updatedUser.name] = updatedUser;
+      localStorage.setItem('app_users', JSON.stringify(users));
   };
 
-  const addReferral = async () => {
-      if (!user?.uid) return;
+  const updateBalance = (amount: number) => {
+      if (!user) return;
+      const updatedUser = {...user, balance: (user.balance || 0) + amount};
+      saveUserToLocalStorage(updatedUser);
+  };
+
+  const addReferral = () => {
+      if (!user) return;
       const bonus = 100;
-      try {
-        await updateDoc(doc(db, 'users', user.uid), {
-            balance: increment(bonus),
-            referrals: increment(1),
-            referralBonus: increment(bonus)
-        });
-        alert('অভিনন্দন! আপনি নতুন একজন রেফারেল পেয়েছেন এবং ১০০ টাকা বোনাস পেয়েছেন।');
-      } catch (error) {
-        console.error("Add referral error:", error);
-      }
+      const updatedUser = {...user, balance: (user.balance || 0) + bonus, referrals: (user.referrals || 0) + 1, referralBonus: (user.referralBonus || 0) + bonus};
+      saveUserToLocalStorage(updatedUser);
+      alert('অভিনন্দন! আপনি নতুন একজন রেফারেল পেয়েছেন এবং ১০০ টাকা বোনাস পেয়েছেন.');
   };
 
-  const claimDailyBonus = async () => {
-      if (!user?.uid) return;
+  const claimDailyBonus = () => {
+      if (!user) return;
       const today = new Date().toDateString();
       if (user.lastDailyBonusDate === today) {
           alert('আপনি আজ ইতিমধ্যে বোনাস নিয়েছেন!');
           return;
       }
       const bonus = 3;
-      try {
-        await updateDoc(doc(db, 'users', user.uid), {
-            balance: increment(bonus),
-            lastDailyBonusDate: today
-        });
-        alert(`অভিনন্দন! আপনি ${bonus} টাকা বোনাস পেয়েছেন।`);
-      } catch (error) {
-        console.error("Claim daily bonus error:", error);
-      }
+      const updatedUser = {...user, balance: (user.balance || 0) + bonus, lastDailyBonusDate: today};
+      saveUserToLocalStorage(updatedUser);
+      alert(`অভিনন্দন! আপনি ${bonus} টাকা বোনাস পেয়েছেন.`);
   };
 
-  if (isLoading) {
-      return <div className='min-h-screen bg-zinc-950 flex items-center justify-center'><div className='animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-400'></div></div>;
-  }
-
   if (!user) {
-      return <LoginPage />;
+      return <LoginPage onLogin={setUser} />;
   }
 
   return <div className="bg-zinc-950 min-h-screen text-white font-sans">
@@ -198,7 +166,7 @@ export default function App() {
         isAlreadyClaimed={user.lastDailyBonusDate === new Date().toDateString()} 
       />
       
-      {activeTab === 'home' && <HomePage setShowRules={setShowRules} user={user} onClaimBonus={() => setShowBonusModal(true)} />}
+      {activeTab === 'home' && <HomePage setShowRules={setShowRules} user={user} onClaimBonus={() => setShowBonusModal(true)} onOpenAdminPanel={() => setShowAdmin(true)} />}
       {activeTab === 'task' && <TaskPage />}
       {activeTab === 'referral' && <ReferralPage user={user} onSimulateReferral={addReferral} />}
       {activeTab === 'withdrawal' && <WithdrawalPage user={user} />}

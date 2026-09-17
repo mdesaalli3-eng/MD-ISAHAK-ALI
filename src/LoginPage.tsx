@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from './lib/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from './lib/firebase';
 
-export const LoginPage = () => {
+export const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
     const [name, setName] = useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -14,40 +10,28 @@ export const LoginPage = () => {
             alert("দয়া করে আপনার নাম লিখুন");
             return;
         }
-        
-        // Get referral code from URL parameter '?ref=...'
-        const urlParams = new URLSearchParams(window.location.search);
-        const referralCode = urlParams.get('ref') || '';
 
-        const email = userName.toLowerCase().replace(/\s+/g, '') + "@app.local";
-        const password = "password123";
+        // Check if user exists in localStorage
+        const users = JSON.parse(localStorage.getItem('app_users') || '{}');
+        let user = users[userName];
 
-        try {
-            // Try to login, if fails, register
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (loginError: any) {
-                if (loginError.code === 'auth/user-not-found') {
-                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                    await setDoc(doc(db, 'users', userCredential.user.uid), {
-                        id: userCredential.user.uid,
-                        name: userName,
-                        email,
-                        referralCode: referralCode.trim(),
-                        role: 'user',
-                        balance: 50,
-                        referrals: 0,
-                        referralBonus: 0,
-                        lastDailyBonusDate: null,
-                        joinedAt: serverTimestamp()
-                    });
-                } else {
-                    throw loginError;
-                }
-            }
-        } catch (error) {
-            alert(error instanceof Error ? error.message : "Auth error");
+        if (!user) {
+            // Register new user
+            user = {
+                name: userName,
+                balance: 50,
+                referrals: 0,
+                referralBonus: 0,
+                lastDailyBonusDate: null,
+                joinedAt: new Date().toISOString()
+            };
+            users[userName] = user;
+            localStorage.setItem('app_users', JSON.stringify(users));
         }
+
+        // Set as logged in
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        onLogin(user);
     };
 
     return (
